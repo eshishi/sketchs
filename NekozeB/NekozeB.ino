@@ -112,20 +112,36 @@ int get_state(sensors_event_t accel_event)
   if (accel_event.acceleration.x <= 2)
   {
     return NOMAL;
-    digitalWrite(DC_PIN, LOW);
-    digitalWrite(LED_PIN, LOW);
   }
   else if (accel_event.acceleration.x < 4)
   {
     return LITTLE_HUNCHBACK;
-    digitalWrite(DC_PIN, LOW);
-    digitalWrite(LED_PIN, HIGH);
   }
   else
   {
     return HUNCHBACK;
+  }
+}
+
+/*
+姿勢の状態からLED, ブザーを操作する
+*/
+void setState(int state)
+{
+  switch (state)
+  {
+  case 0:
+    digitalWrite(DC_PIN, LOW);
+    digitalWrite(LED_PIN, LOW);
+    break;
+  case LITTLE_HUNCHBACK:
+    digitalWrite(DC_PIN, LOW);
+    digitalWrite(LED_PIN, HIGH);
+    break;
+  case HUNCHBACK:
     digitalWrite(DC_PIN, HIGH);
     digitalWrite(LED_PIN, HIGH);
+    break;
   }
   Serial.println("----");
 }
