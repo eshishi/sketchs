@@ -4,6 +4,10 @@
 #define LED_PIN 12
 #define DC_PIN 5
 
+#define NOMAL 0            // 正常
+#define LITTLE_HUNCHBACK 1 // ちょい猫背
+#define HUNCHBACK 2        // 猫背
+
 Adafruit_MPU6050 mpu;
 void showRange()
 {
@@ -101,19 +105,19 @@ int get_state(sensors_event_t accel_event)
 
   if (accel_event.acceleration.x <= 2)
   {
-    return 0;
+    return NOMAL;
     digitalWrite(DC_PIN, LOW);
     digitalWrite(LED_PIN, LOW);
   }
   else if (accel_event.acceleration.x < 4)
   {
-    return 1;
+    return LITTLE_HUNCHBACK;
     digitalWrite(DC_PIN, LOW);
     digitalWrite(LED_PIN, HIGH);
   }
   else
   {
-    return 2;
+    return HUNCHBACK;
     digitalWrite(DC_PIN, HIGH);
     digitalWrite(LED_PIN, HIGH);
   }
