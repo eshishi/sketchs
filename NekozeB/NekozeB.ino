@@ -9,6 +9,9 @@
 #define HUNCHBACK 2        // 猫背
 
 Adafruit_MPU6050 mpu;
+/*
+範囲出力関数
+*/
 void showRange()
 {
   Serial.print("Accelerometer range set to: ");
@@ -100,6 +103,9 @@ void setup(void)
   delay(100);
 }
 
+/*
+現在の姿勢を判定する
+*/
 int get_state(sensors_event_t accel_event)
 {
 
