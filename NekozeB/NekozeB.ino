@@ -93,65 +93,40 @@ void setup(void)
   delay(100);
 }
 
+int get_state()
+{
+}
+
 void loop()
 {
   /* Get new sensor events with the readings */
-  sensors_event_t a, g, temp;
-  mpu.getEvent(&a, &g, &temp);
+  sensors_event_t accel, gyro, temp;
+  mpu.getEvent(&accel, &gyro, &temp);
 
   /* Print out the values */
-  Serial.print("Acceleration X: ");
-  Serial.print(a.acceleration.x);
-  Serial.print(", Y: ");
-  Serial.print(a.acceleration.y);
-  Serial.print(", Z: ");
-  Serial.print(a.acceleration.z);
-  Serial.println(" m/s^2");
+  Serial.printf("Acceleration X: %f, Y: %f, Z: %f m/s^2\n", accel.acceleration.x, accel.acceleration.y, accel.acceleration.z);
+  Serial.printf("Rotation X: %f, Y: %f, Z: %f \n", gyro.gyro.x, gyro.gyro.y, gyro.gyro.z);
+  Serial.printf("Temperature: %f degC\n", temp.temperature);
 
-  Serial.print("Rotation X: ");
-  Serial.print(g.gyro.x);
-  Serial.print(", Y: ");
-  Serial.print(g.gyro.y);
-  Serial.print(", Z: ");
-  Serial.print(g.gyro.z);
-  Serial.println(" rad/s");
-
-  Serial.print("Temperature: ");
-  Serial.print(temp.temperature);
-  Serial.println(" degC");
-
-  Serial.println("");
-  Serial.println("");
-
-  if (a.acceleration.x <= 2)
+  if (accel.acceleration.x <= 2)
   {
-    Serial.println("正常だにゃ");
+    Serial.println("0");
     digitalWrite(DC_PIN, LOW);
-    Serial.println("");
-    Serial.println("");
     digitalWrite(LED_PIN, LOW);
   }
-  else if (a.acceleration.x >= 3 && a.acceleration.x < 4)
+  else if (accel.acceleration.x < 4)
   {
-    Serial.println("猫背だにゃ");
+    Serial.println("1");
     digitalWrite(DC_PIN, LOW);
-    Serial.println("");
-    Serial.println("");
-    digitalWrite(LED_PIN, HIGH);
-  }
-  else if (a.acceleration.x >= 4)
-  {
-    Serial.println("ゴミくずだにゃ");
-    digitalWrite(DC_PIN, HIGH);
-    Serial.println("");
-    Serial.println("");
     digitalWrite(LED_PIN, HIGH);
   }
   else
   {
-    digitalWrite(LED_PIN, LOW);
-    digitalWrite(DC_PIN, LOW);
+    Serial.println("2");
+    digitalWrite(DC_PIN, HIGH);
+    digitalWrite(LED_PIN, HIGH);
   }
+  Serial.println("----");
 
   delay(1000);
 }
