@@ -154,7 +154,10 @@ void loop()
   Serial.printf("Acceleration X: %f, Y: %f, Z: %f m/s^2\n", accel_event.acceleration.x, accel_event.acceleration.y, accel_event.acceleration.z);
   Serial.printf("Rotation X: %f, Y: %f, Z: %f \n", gyro.gyro.x, gyro.gyro.y, gyro.gyro.z);
   Serial.printf("Temperature: %f degC\n", temp.temperature);
-  Serial.println(getState(accel_event));
+
+  auto state = getState(accel_event);
+  setState(state);
+  Serial.println(state);
   /* Get new sensor events with the readings */
   delay(1000);
   Serial.println("----");
