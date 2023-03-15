@@ -1,8 +1,8 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
-int LED_PIN = 12;
-int DC_PIN = 5;
+#define LED_PIN 12
+#define DC_PIN 5
 
 Adafruit_MPU6050 mpu;
 
