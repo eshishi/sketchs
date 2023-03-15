@@ -143,7 +143,6 @@ void setState(int state)
     digitalWrite(LED_PIN, HIGH);
     break;
   }
-  Serial.println("----");
 }
 
 void loop()
@@ -158,4 +157,5 @@ void loop()
   Serial.println(get_state(accel_event));
   /* Get new sensor events with the readings */
   delay(1000);
+  Serial.println("----");
 }
