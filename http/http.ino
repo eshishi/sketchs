@@ -56,37 +56,13 @@ void loop()
         http.begin(url + url_suffix);
         http.setReuse(true);
         http.addHeader("Content-Type", "application/json");
-        auto resCode = http.POST(R"({"state":3})");
+        auto resCode = http.POST(R"({"state":3, "timestamp": {".sv": "timestamp"}})");
         Serial.println(resCode);
         if (resCode < 0)
         {
             Serial.printf("[error] %s", http.errorToString(resCode).c_str());
-            http.end();
         }
-        else
-        {
-            DynamicJsonDocument doc(1024);
-            // deserializeJson(doc, http.getString());
-            // const char *name = doc["name"];
-            // Serial.printf("%s", name);
-            auto ret = http.getString();
-            // Serial.println(ret);
-            deserializeJson(doc, ret.c_str());
-            const char *name = doc["name"];
-            Serial.printf("%s", name);
-            http.end();
-            http.begin(url + "/" + name + "/timestamp" + url_suffix);
-            resCode = http.PUT(R"({".sv":"timestamp"})");
-            if (resCode < 0)
-            {
-                Serial.println(http.errorToString(resCode));
-            }
-            else
-            {
-                Serial.println(resCode);
-                Serial.println(http.getString());
-            }
-        }
+        http.end();
     }
 
     // HTTPClient http;
