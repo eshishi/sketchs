@@ -93,40 +93,40 @@ void setup(void)
   delay(100);
 }
 
-int get_state()
+int get_state(sensors_event_t accel_event)
 {
-}
 
-void loop()
-{
-  /* Get new sensor events with the readings */
-  sensors_event_t accel, gyro, temp;
-  mpu.getEvent(&accel, &gyro, &temp);
-
-  /* Print out the values */
-  Serial.printf("Acceleration X: %f, Y: %f, Z: %f m/s^2\n", accel.acceleration.x, accel.acceleration.y, accel.acceleration.z);
-  Serial.printf("Rotation X: %f, Y: %f, Z: %f \n", gyro.gyro.x, gyro.gyro.y, gyro.gyro.z);
-  Serial.printf("Temperature: %f degC\n", temp.temperature);
-
-  if (accel.acceleration.x <= 2)
+  if (accel_event.acceleration.x <= 2)
   {
-    Serial.println("0");
+    return 0;
     digitalWrite(DC_PIN, LOW);
     digitalWrite(LED_PIN, LOW);
   }
-  else if (accel.acceleration.x < 4)
+  else if (accel_event.acceleration.x < 4)
   {
-    Serial.println("1");
+    return 1;
     digitalWrite(DC_PIN, LOW);
     digitalWrite(LED_PIN, HIGH);
   }
   else
   {
-    Serial.println("2");
+    return 2;
     digitalWrite(DC_PIN, HIGH);
     digitalWrite(LED_PIN, HIGH);
   }
   Serial.println("----");
+}
 
+void loop()
+{
+  sensors_event_t accel_event, gyro, temp;
+  mpu.getEvent(&accel_event, &gyro, &temp);
+
+  /* Print out the values */
+  Serial.printf("Acceleration X: %f, Y: %f, Z: %f m/s^2\n", accel_event.acceleration.x, accel_event.acceleration.y, accel_event.acceleration.z);
+  Serial.printf("Rotation X: %f, Y: %f, Z: %f \n", gyro.gyro.x, gyro.gyro.y, gyro.gyro.z);
+  Serial.printf("Temperature: %f degC\n", temp.temperature);
+  Serial.println(get_state(accel_event));
+  /* Get new sensor events with the readings */
   delay(1000);
 }
