@@ -1,4 +1,3 @@
-#include <ArduinoJson.h>
 
 #include <Arduino.h>
 
@@ -6,11 +5,11 @@
 #include <WiFiMulti.h>
 
 #include <HTTPClient.h>
-#include <string>
 #include <ArduinoJson.h>
 
 #define USE_SERIAL Serial
 #define SW1 14
+#define LED 25
 
 WiFiMulti wifiMulti;
 
@@ -28,6 +27,7 @@ void setup()
     wifiMulti.addAP("maruyama", "marufuck");
 
     pinMode(swData, INPUT);
+    pinMode(LED, OUTPUT);
 
     for (uint8_t t = 4; t > 0; t--)
     {
@@ -45,9 +45,11 @@ void loop()
     {
         return;
     }
+    digitalWrite(LED, HIGH);
 
     if (swData != swDataOld && swData)
     {
+        Serial.println("pull");
         HTTPClient http;
         String url = String(url_base);
         // url += url_suffix;
@@ -55,6 +57,7 @@ void loop()
         http.setReuse(true);
         http.addHeader("Content-Type", "application/json");
         auto resCode = http.POST(R"({"state":3})");
+        Serial.println(resCode);
         if (resCode < 0)
         {
             Serial.printf("[error] %s", http.errorToString(resCode).c_str());
@@ -62,6 +65,27 @@ void loop()
         }
         else
         {
+            DynamicJsonDocument doc(1024);
+            // deserializeJson(doc, http.getString());
+            // const char *name = doc["name"];
+            // Serial.printf("%s", name);
+            auto ret = http.getString();
+            // Serial.println(ret);
+            deserializeJson(doc, ret.c_str());
+            const char *name = doc["name"];
+            Serial.printf("%s", name);
+            http.end();
+            http.begin(url + "/" + name + "/timestamp" + url_suffix);
+            resCode = http.PUT(R"({".sv":"timestamp"})");
+            if (resCode < 0)
+            {
+                Serial.println(http.errorToString(resCode));
+            }
+            else
+            {
+                Serial.println(resCode);
+                Serial.println(http.getString());
+            }
         }
     }
 
