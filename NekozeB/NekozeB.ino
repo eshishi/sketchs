@@ -106,7 +106,7 @@ void setup(void)
 /*
 現在の姿勢を判定する
 */
-int get_state(sensors_event_t accel_event)
+int getState(sensors_event_t accel_event)
 {
 
   if (accel_event.acceleration.x <= 2)
@@ -154,7 +154,7 @@ void loop()
   Serial.printf("Acceleration X: %f, Y: %f, Z: %f m/s^2\n", accel_event.acceleration.x, accel_event.acceleration.y, accel_event.acceleration.z);
   Serial.printf("Rotation X: %f, Y: %f, Z: %f \n", gyro.gyro.x, gyro.gyro.y, gyro.gyro.z);
   Serial.printf("Temperature: %f degC\n", temp.temperature);
-  Serial.println(get_state(accel_event));
+  Serial.println(getState(accel_event));
   /* Get new sensor events with the readings */
   delay(1000);
   Serial.println("----");
