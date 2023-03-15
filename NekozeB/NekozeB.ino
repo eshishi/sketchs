@@ -5,29 +5,8 @@
 #define DC_PIN 5
 
 Adafruit_MPU6050 mpu;
-
-void setup(void)
+void showRange()
 {
-  pinMode(DC_PIN, OUTPUT);
-  pinMode(LED_PIN, OUTPUT);
-  Serial.begin(115200);
-  while (!Serial)
-    delay(10); // will pause Zero, Leonardo, etc until serial console opens
-
-  Serial.println("Adafruit MPU6050 test!");
-
-  // Try to initialize!
-  if (!mpu.begin())
-  {
-    Serial.println("Failed to find MPU6050 chip");
-    while (!mpu.begin())
-    {
-      delay(10);
-    }
-  }
-  Serial.println("MPU6050 Found!");
-
-  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
   Serial.print("Accelerometer range set to: ");
   switch (mpu.getAccelerometerRange())
   {
@@ -44,7 +23,6 @@ void setup(void)
     Serial.println("+-16G");
     break;
   }
-  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   Serial.print("Gyro range set to: ");
   switch (mpu.getGyroRange())
   {
@@ -62,7 +40,6 @@ void setup(void)
     break;
   }
 
-  mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
   Serial.print("Filter bandwidth set to: ");
   switch (mpu.getFilterBandwidth())
   {
@@ -88,6 +65,32 @@ void setup(void)
     Serial.println("5 Hz");
     break;
   }
+}
+
+void setup(void)
+{
+  pinMode(DC_PIN, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
+  Serial.begin(115200);
+  while (!Serial)
+    delay(10); // will pause Zero, Leonardo, etc until serial console opens
+
+  Serial.println("Adafruit MPU6050 test!");
+
+  // Try to initialize!
+  if (!mpu.begin())
+  {
+    Serial.println("Failed to find MPU6050 chip");
+    while (!mpu.begin())
+    {
+      delay(10);
+    }
+  }
+  Serial.println("MPU6050 Found!");
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
+  showRange();
 
   Serial.println("");
   delay(100);
