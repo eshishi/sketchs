@@ -1,33 +1,19 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
-int LED_PIN = 12;
-int DC_PIN = 5;
+#define LED_PIN 12
+#define DC_PIN 5
+
+#define NOMAL 0            // 正常
+#define LITTLE_HUNCHBACK 1 // ちょい猫背
+#define HUNCHBACK 2        // 猫背
 
 Adafruit_MPU6050 mpu;
-
-void setup(void)
+/*
+範囲出力関数
+*/
+void showRange()
 {
-  pinMode(DC_PIN, OUTPUT);
-  pinMode(LED_PIN, OUTPUT);
-  Serial.begin(115200);
-  while (!Serial)
-    delay(10); // will pause Zero, Leonardo, etc until serial console opens
-
-  Serial.println("Adafruit MPU6050 test!");
-
-  // Try to initialize!
-  if (!mpu.begin())
-  {
-    Serial.println("Failed to find MPU6050 chip");
-    while (!mpu.begin())
-    {
-      delay(10);
-    }
-  }
-  Serial.println("MPU6050 Found!");
-
-  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
   Serial.print("Accelerometer range set to: ");
   switch (mpu.getAccelerometerRange())
   {
@@ -44,7 +30,6 @@ void setup(void)
     Serial.println("+-16G");
     break;
   }
-  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   Serial.print("Gyro range set to: ");
   switch (mpu.getGyroRange())
   {
@@ -62,7 +47,6 @@ void setup(void)
     break;
   }
 
-  mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
   Serial.print("Filter bandwidth set to: ");
   switch (mpu.getFilterBandwidth())
   {
@@ -88,33 +72,77 @@ void setup(void)
     Serial.println("5 Hz");
     break;
   }
+}
+
+void setup(void)
+{
+  pinMode(DC_PIN, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
+  Serial.begin(115200);
+  while (!Serial)
+    delay(10); // will pause Zero, Leonardo, etc until serial console opens
+
+  Serial.println("Adafruit MPU6050 test!");
+
+  // Try to initialize!
+  if (!mpu.begin())
+  {
+    Serial.println("Failed to find MPU6050 chip");
+    while (!mpu.begin())
+    {
+      delay(10);
+    }
+  }
+  Serial.println("MPU6050 Found!");
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
+  showRange();
 
   Serial.println("");
   delay(100);
 }
 
-int get_state(sensors_event_t accel_event)
+/*
+現在の姿勢を判定する
+*/
+int getState(sensors_event_t accel_event)
 {
 
   if (accel_event.acceleration.x <= 2)
   {
-    return 0;
-    digitalWrite(DC_PIN, LOW);
-    digitalWrite(LED_PIN, LOW);
+    return NOMAL;
   }
   else if (accel_event.acceleration.x < 4)
   {
-    return 1;
-    digitalWrite(DC_PIN, LOW);
-    digitalWrite(LED_PIN, HIGH);
+    return LITTLE_HUNCHBACK;
   }
   else
   {
-    return 2;
+    return HUNCHBACK;
+  }
+}
+
+/*
+姿勢の状態からLED, ブザーを操作する
+*/
+void setState(int state)
+{
+  switch (state)
+  {
+  case 0:
+    digitalWrite(DC_PIN, LOW);
+    digitalWrite(LED_PIN, LOW);
+    break;
+  case LITTLE_HUNCHBACK:
+    digitalWrite(DC_PIN, LOW);
+    digitalWrite(LED_PIN, HIGH);
+    break;
+  case HUNCHBACK:
     digitalWrite(DC_PIN, HIGH);
     digitalWrite(LED_PIN, HIGH);
+    break;
   }
-  Serial.println("----");
 }
 
 void loop()
@@ -126,7 +154,8 @@ void loop()
   Serial.printf("Acceleration X: %f, Y: %f, Z: %f m/s^2\n", accel_event.acceleration.x, accel_event.acceleration.y, accel_event.acceleration.z);
   Serial.printf("Rotation X: %f, Y: %f, Z: %f \n", gyro.gyro.x, gyro.gyro.y, gyro.gyro.z);
   Serial.printf("Temperature: %f degC\n", temp.temperature);
-  Serial.println(get_state(accel_event));
+  Serial.println(getState(accel_event));
   /* Get new sensor events with the readings */
   delay(1000);
+  Serial.println("----");
 }
