@@ -1,14 +1,37 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
+#include <WiFi.h>
+#include <WiFiMulti.h>
+
+#include <HTTPClient.h>
+
 #define LED_PIN 12
 #define DC_PIN 5
+#define STATUS_LED 14
 
 #define NOMAL 0            // 正常
 #define LITTLE_HUNCHBACK 1 // ちょい猫背
 #define HUNCHBACK 2        // 猫背
 
+#define QUEUE_LENGTH 20
+
+#define SSID "maruyama"
+#define WIFI_PASS "marufuck"
+using QueueType = u8_t;
+
 Adafruit_MPU6050 mpu;
+WiFiMulti wifiMulti;
+TaskHandle_t statusLed;
+QueueHandle_t uploadQueue;
+
+#define url_temp "https://nekoze-9ccfb-default-rtdb.asia-southeast1.firebasedatabase.app/test/%s/data.json"
+const char *uid = "-NQcUOvNQPtZmec-M65n";
+#define data_temp R"({"state": %d, "timestamp": {".sv": "timestamp"}})"
+bool wifiIsRunning()
+{
+  return wifiMulti.run() == WL_CONNECTED;
+}
 /*
 範囲出力関数
 */
@@ -78,11 +101,16 @@ void setup(void)
 {
   pinMode(DC_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
+  pinMode(STATUS_LED, OUTPUT);
+  wifiMulti.addAP(SSID, WIFI_PASS);
   Serial.begin(115200);
   while (!Serial)
     delay(10); // will pause Zero, Leonardo, etc until serial console opens
 
+  xTaskCreatePinnedToCore(blinkLed, "status", 4096, NULL, 3, &statusLed, 1);
+  xTaskCreatePinnedToCore(wifiChecker, "wifiChecker", 4096, NULL, 2, NULL, 0);
   Serial.println("Adafruit MPU6050 test!");
+  uploadQueue = xQueueCreate(QUEUE_LENGTH, sizeof(QueueType));
 
   // Try to initialize!
   if (!mpu.begin())
@@ -106,7 +134,7 @@ void setup(void)
 /*
 現在の姿勢を判定する
 */
-int getState(sensors_event_t accel_event)
+QueueType getState(sensors_event_t accel_event)
 {
 
   if (accel_event.acceleration.x <= 2)
@@ -126,7 +154,7 @@ int getState(sensors_event_t accel_event)
 /*
 姿勢の状態からLED, ブザーを操作する
 */
-void setState(int state)
+void setState(QueueType state)
 {
   switch (state)
   {
@@ -144,6 +172,42 @@ void setState(int state)
     break;
   }
 }
+void uploader(void *args)
+{
+  // while (wifiMulti.run() != WL_CONNECTED)
+  // {
+  //     delay(1);
+  // }
+  HTTPClient http;
+  while (true)
+  {
+    QueueType input;
+
+    xQueueReceive(uploadQueue, &input, portMAX_DELAY);
+    Serial.println("on");
+    unsigned int size = (sizeof(url_temp) + sizeof(uid));
+    char url[size];
+    sprintf(url, url_temp, uid);
+    Serial.printf("[%s] url = %s\n", pcTaskGetName(NULL), url);
+
+    http.begin(url);
+    size = (sizeof(data_temp) + 1);
+    char data[size];
+    sprintf(data, data_temp, input);
+    Serial.printf("[%s] data = %s\n", pcTaskGetName(NULL), data);
+    auto resCode = http.POST(data);
+    if (resCode < 0)
+    {
+      Serial.printf("[%s][error] %s\n", pcTaskGetName(NULL), http.errorToString(resCode).c_str());
+    }
+    else
+    {
+      Serial.println(resCode);
+    }
+    http.end();
+    delay(1);
+  }
+}
 
 void loop()
 {
@@ -159,6 +223,33 @@ void loop()
   setState(state);
   Serial.println(state);
   /* Get new sensor events with the readings */
-  delay(1000);
+  if (wifiIsRunning())
+  {
+    xQueueSend(uploadQueue, &state, 0);
+  }
   Serial.println("----");
+  delay(1000);
+}
+void blinkLed(void *args)
+{
+  for (auto i = true;; i = !i)
+  {
+    digitalWrite(STATUS_LED, i);
+    delay(1000);
+  }
+}
+
+void wifiChecker(void *args)
+{
+  Serial.printf("[%s] waiting wifi setup\n", pcTaskGetName(NULL));
+  while (!wifiIsRunning())
+  {
+    delay(1);
+  }
+  Serial.printf("[%s] wifi setup done\n", pcTaskGetName(NULL));
+  vTaskDelete(statusLed);
+  digitalWrite(STATUS_LED, HIGH);
+  xTaskCreatePinnedToCore(uploader, "uploader0", 8192, NULL, 1, NULL, 0);
+  xTaskCreatePinnedToCore(uploader, "uploader1", 8192, NULL, 1, NULL, 0);
+  vTaskDelete(NULL);
 }
