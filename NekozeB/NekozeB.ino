@@ -9,6 +9,7 @@
 #define LED_PIN 12
 #define DC_PIN 5
 #define STATUS_LED 14
+#define RESET_SW 26
 
 #define NOMAL 0            // 正常
 #define LITTLE_HUNCHBACK 1 // ちょい猫背
@@ -102,6 +103,7 @@ void setup(void)
   pinMode(DC_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(STATUS_LED, OUTPUT);
+  pinMode(RESET_SW, INPUT);
   wifiMulti.addAP(SSID, WIFI_PASS);
   Serial.begin(115200);
   while (!Serial)
