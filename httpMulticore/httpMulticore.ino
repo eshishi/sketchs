@@ -13,7 +13,7 @@
 
 WiFiMulti wifiMulti;
 
-const char *url = "http://192.168.0.51:8010";
+const char *url = "http://192.168.137.1:8010";
 
 using QueueType = u8_t;
 boolean swDataOld = false;
@@ -21,31 +21,54 @@ boolean swData;
 
 QueueHandle_t uploadQueue;
 TaskHandle_t uploadTask;
+TaskHandle_t statusLed;
+
+bool wifiIsRunning()
+{
+    return wifiMulti.run() != WL_CONNECTED;
+}
+
 void setup()
 {
+    // TaskHandle_t wifiChecker;
     Serial.begin(115200);
     wifiMulti.addAP(SSID, WIFI_PASS);
-    uploadQueue = xQueueCreate(QUEUE_LENGTH, sizeof(QueueType));
+    xTaskCreatePinnedToCore(blinkLed, "status", 4096, NULL, 3, &statusLed, 1);
+    xTaskCreatePinnedToCore(wifiChecker, "wifiChecker", 4096, NULL, 2, NULL, 0);
 
-    pinMode(swData, INPUT);
+    uploadQueue = xQueueCreate(QUEUE_LENGTH, sizeof(QueueType));
+    // xTaskCreatePinnedToCore(uploader, "uploader", 8192, NULL, 1, &uploadTask, 0);
+    // xTaskCreatePinnedToCore(uploader, "uploader", 8192, NULL, 2, &uploadTask, 0);
+
+    pinMode(SW1, INPUT);
     pinMode(LED, OUTPUT);
 }
-void loop() {}
-
-void uploader()
+void loop()
 {
-    Serial.println("[uploader] waiting wifi setup");
-    while (wifiMulti.run() != WL_CONNECTED)
+    swData = digitalRead(SW1);
+    if (swData != swDataOld && swData)
     {
-        delay(10);
+        Serial.println("pull");
+        QueueType a = 0;
+        xQueueSend(uploadQueue, &a, 0);
     }
-    digitalWrite(LED, HIGH);
-    Serial.println("[uploader] wifi setup done");
+    swDataOld = swData;
+
+    delay(10);
+}
+
+void uploader(void *args)
+{
+    // while (wifiMulti.run() != WL_CONNECTED)
+    // {
+    //     delay(1);
+    // }
     HTTPClient http;
     while (true)
     {
         QueueType input;
         xQueueReceive(uploadQueue, &input, portMAX_DELAY);
+        Serial.println("on");
         http.begin(url);
         auto resCode = http.POST(std::to_string(input).c_str());
         if (resCode < 0)
@@ -59,4 +82,30 @@ void uploader()
         http.end();
         delay(1);
     }
+}
+
+void blinkLed(void *args)
+{
+    for (auto i = true;; i = !i)
+    {
+        digitalWrite(LED, i);
+        delay(1000);
+    }
+    digitalWrite(LED, HIGH);
+    vTaskDelete(NULL);
+}
+
+void wifiChecker(void *args)
+{
+    Serial.println("[uploader] waiting wifi setup");
+    while (wifiMulti.run() != WL_CONNECTED)
+    {
+        delay(1);
+    }
+    Serial.println("[uploader] wifi setup done");
+    vTaskDelete(statusLed);
+    digitalWrite(LED, HIGH);
+    xTaskCreatePinnedToCore(uploader, "uploader", 8192, NULL, 1, &uploadTask, 0);
+    xTaskCreatePinnedToCore(uploader, "uploader", 8192, NULL, 1, &uploadTask, 0);
+    vTaskDelete(NULL);
 }
