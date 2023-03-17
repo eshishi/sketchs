@@ -3,10 +3,14 @@
 #define LED 25
 boolean swDataOld = false;
 boolean swData;
-TaskHandle_t blinkTask;
+TaskHandle_t blinkTask = NULL;
 
 bool isTaskRunning()
 {
+    if (blinkTask == NULL)
+    {
+        return false;
+    }
     switch (eTaskGetState(blinkTask))
     {
     case eRunning:
@@ -37,8 +41,6 @@ void setup()
     pinMode(SW1, INPUT);
     pinMode(LED, OUTPUT);
     // digitalWrite(LED, HIGH);
-    xTaskCreatePinnedToCore(blink, "", 4096, NULL, 1, &blinkTask, 1);
-    vTaskDelete(blinkTask);
 }
 
 void loop()
