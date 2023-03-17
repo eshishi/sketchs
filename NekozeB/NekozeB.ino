@@ -106,7 +106,8 @@ void setup(void)
   pinMode(LED_PIN, OUTPUT);
   pinMode(STATUS_LED, OUTPUT);
   pinMode(RESET_SW, INPUT);
-  wifiMulti.addAP(SSID, WIFI_PASS);
+  // wifiMulti.addAP(SSID, WIFI_PASS);
+  wifiMulti.addAP("maruyama", "marufuck");
   Serial.begin(115200);
   while (!Serial)
     delay(10); // will pause Zero, Leonardo, etc until serial console opens
@@ -141,11 +142,11 @@ void setup(void)
 QueueType getState(sensors_event_t accel_event)
 {
 
-  if (accel_event.acceleration.x <= 2)
+  if (accel_event.acceleration.x <= 0.5)
   {
     return NOMAL;
   }
-  else if (accel_event.acceleration.x < 4)
+  else if (accel_event.acceleration.x < 2)
   {
     return LITTLE_HUNCHBACK;
   }
