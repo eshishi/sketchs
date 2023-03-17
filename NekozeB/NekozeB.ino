@@ -27,6 +27,7 @@ TaskHandle_t statusLed;
 QueueHandle_t uploadQueue;
 
 TaskHandle_t uploaders[2];
+TaskHandle_t blinkTask = NULL;
 
 #define url_temp "https://nekoze-9ccfb-default-rtdb.asia-southeast1.firebasedatabase.app/test/%s/data.json"
 const char *uid = "-NQcUOvNQPtZmec-M65n";
@@ -99,6 +100,36 @@ void showRange()
     break;
   }
 }
+bool isTaskRunning()
+{
+  if (blinkTask == NULL)
+  {
+    return false;
+  }
+  auto state = eTaskGetState(blinkTask);
+  switch (eTaskGetState(blinkTask))
+  {
+  case eRunning:
+    Serial.println("eRunning");
+    break;
+  case eReady:
+    Serial.println("eReady");
+    break;
+  case eBlocked:
+    Serial.println("eBlocked");
+    break;
+  case eSuspended:
+    Serial.println("eSuspended");
+    break;
+  case eDeleted:
+    Serial.println("eDeleted");
+    break;
+  case eInvalid:
+    Serial.println("eInvalid");
+    break;
+  }
+  return state == eRunning || state == eBlocked; // || state == eReady;
+}
 
 void setup(void)
 {
@@ -166,14 +197,28 @@ void setState(QueueType state)
   case 0:
     digitalWrite(DC_PIN, LOW);
     digitalWrite(LED_PIN, LOW);
+    // vTaskDelete(blinkTask);
+    if (isTaskRunning())
+    {
+      vTaskDelete(blinkTask);
+    }
     break;
   case LITTLE_HUNCHBACK:
     digitalWrite(DC_PIN, LOW);
     digitalWrite(LED_PIN, HIGH);
+    // vTaskDelete(blinkTask);
+    if (isTaskRunning())
+    {
+      vTaskDelete(blinkTask);
+    }
     break;
   case HUNCHBACK:
     digitalWrite(DC_PIN, HIGH);
-    digitalWrite(LED_PIN, HIGH);
+    // digitalWrite(LED_PIN, HIGH);
+    if (!isTaskRunning())
+    {
+      xTaskCreatePinnedToCore(blink, "", 4096, NULL, 2, &blinkTask, 0);
+    }
     break;
   }
 }
@@ -271,4 +316,14 @@ void wifiWatchdog(void *args)
   vTaskDelete(uploaders[1]);
   xTaskCreatePinnedToCore(wifiChecker, "wifiChecker", 4096, NULL, 2, NULL, 0);
   vTaskDelete(NULL);
+}
+void blink(void *a)
+{
+  while (1)
+  {
+    digitalWrite(LED_PIN, HIGH);
+    delay(100);
+    digitalWrite(LED_PIN, LOW);
+    delay(100);
+  }
 }
