@@ -26,6 +26,8 @@ WiFiMulti wifiMulti;
 TaskHandle_t statusLed;
 QueueHandle_t uploadQueue;
 
+TaskHandle_t uploaders[2];
+
 #define url_temp "https://nekoze-9ccfb-default-rtdb.asia-southeast1.firebasedatabase.app/test/%s/data.json"
 const char *uid = "-NQcUOvNQPtZmec-M65n";
 #define data_temp R"({"state": %d, "timestamp": {".sv": "timestamp"}})"
@@ -251,7 +253,21 @@ void wifiChecker(void *args)
   Serial.printf("[%s] wifi setup done\n", pcTaskGetName(NULL));
   vTaskDelete(statusLed);
   digitalWrite(STATUS_LED, HIGH);
-  xTaskCreatePinnedToCore(uploader, "uploader0", 8192, NULL, 1, NULL, 0);
-  xTaskCreatePinnedToCore(uploader, "uploader1", 8192, NULL, 1, NULL, 0);
+  xTaskCreatePinnedToCore(uploader, "uploader0", 8192, uploaders[0], 1, NULL, 0);
+  xTaskCreatePinnedToCore(uploader, "uploader1", 8192, uploaders[1], 1, NULL, 0);
+  xTaskCreatePinnedToCore(wifiWatchdog, "wifiWatchdog", 4096, NULL, 2, NULL, 0);
+  vTaskDelete(NULL);
+}
+
+void wifiWatchdog(void *args)
+{
+  while (wifiIsRunning())
+  {
+    delay(1);
+  }
+
+  vTaskDelete(uploaders[0]);
+  vTaskDelete(uploaders[1]);
+  xTaskCreatePinnedToCore(wifiChecker, "wifiChecker", 4096, NULL, 2, NULL, 0);
   vTaskDelete(NULL);
 }
