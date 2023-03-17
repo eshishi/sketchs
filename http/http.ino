@@ -5,7 +5,6 @@
 #include <WiFiMulti.h>
 
 #include <HTTPClient.h>
-#include <ArduinoJson.h>
 
 #define USE_SERIAL Serial
 #define SW1 14
